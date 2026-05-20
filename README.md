@@ -1,15 +1,25 @@
 # InventarioOps
 
-Sistema de inventario en tiempo real para bodegas con scanners Zebra TC22.
+Real-time warehouse inventory system built for **Zebra TC22 scanners**. Tracks shipments, manages locations, and provides live dashboards for supervisors — all operated directly from the scanner screen.
 
-## Estructura del proyecto
+## Stack
+
+| Layer | Technology |
+|---|---|
+| Database | PostgreSQL 16 |
+| Cache / WebSockets | Redis 7 |
+| Backend | Node.js + JWT auth |
+| Frontend | React + Vite + Nginx |
+| Orchestration | Docker Compose |
+
+## Project structure
 
 ```
 inventario-ops/
 ├── docker-compose.yml
 ├── .env.example
 ├── db/
-│   └── init.sql          ← Schema de PostgreSQL
+│   └── init.sql          ← PostgreSQL schema (ENUMs, triggers, indexes)
 ├── backend/
 │   ├── Dockerfile
 │   ├── package.json
@@ -27,59 +37,59 @@ inventario-ops/
             └── Admin.jsx
 ```
 
-## Levantar en desarrollo / producción
+## Setup
 
 ```bash
-# 1. Clonar y configurar
+# 1. Clone and configure
 cp .env.example .env
-# Editar .env con tus contraseñas
+# Edit .env — set DB_PASSWORD and JWT_SECRET before running
 
-# 2. Levantar todo
+# 2. Start all services
 docker compose up -d
 
-# 3. Ver logs
+# 3. Follow logs
 docker compose logs -f backend
 
-# 4. Bajar
+# 4. Stop
 docker compose down
 ```
 
 ## URLs
 
-| URL | Descripción |
+| URL | Description |
 |-----|-------------|
-| `http://SERVER/` | Dashboard de supervisión |
-| `http://SERVER/scanner` | Pantalla Zebra TC22 |
-| `http://SERVER/admin` | Panel de administración |
+| `http://SERVER/` | Supervisor dashboard |
+| `http://SERVER/scanner` | Zebra TC22 scanner screen |
+| `http://SERVER/admin` | Admin panel |
 
-## Usuario por defecto
+## First login
 
-- **Usuario:** `admin`
-- **Contraseña:** `admin123`
+- **User:** `admin`
+- **Password:** defined in `.env` at first run
 
-⚠️ Cambiar la contraseña en producción desde el panel de Admin.
+> ⚠️ Change the default password immediately from the Admin panel (`/admin`) before going to production.
 
-## Roles y permisos
+## Roles
 
-| Rol | Permisos |
-|-----|----------|
-| **operador** | Escanear, consultar, cambiar ubicación |
-| **supervisor** | Todo del operador + cargar listas + ver dashboard |
-| **admin** | Todo + gestión de usuarios, ubicaciones, marcar abandono |
+| Role | Permissions |
+|---|---|
+| **operator** | Scan packages, query status, change location |
+| **supervisor** | All operator permissions + upload lists + view dashboard |
+| **admin** | All supervisor permissions + manage users, locations, mark abandoned |
 
-## Configuración de Zebra TC22
+## Zebra TC22 configuration
 
-El scanner TC22 con DataWedge puede configurarse en modo **HID keyboard**:
-- Abre DataWedge en el TC22
-- Perfil activo → Output → Keyboard
-- El scanner enviará el código como si fuera teclado
-- La pantalla `/scanner` captura el input automáticamente
+The TC22 scanner with DataWedge can be configured in **HID keyboard mode**:
+- Open DataWedge on the TC22
+- Active profile → Output → Keyboard
+- The scanner sends the barcode as keyboard input
+- The `/scanner` page captures input automatically — no extra app needed
 
-## Formato de las listas
+## List formats
 
-El sistema acepta archivos **CSV, XLSX o TXT**.
+The system accepts **CSV, XLSX, or TXT** files.
 
-Para las listas de tránsito, el formato esperado es el del archivo Excel con columnas:
-`FECHA, MASTER, GUIA, VALOR, MND, PZA, PESO, DESTINO, REMITENTE, CLIENTE (DESTINATARIO), DESCRIPCION, PROCESO`
+**Transit list** — expected columns:
+`DATE, MASTER, TRACKING, VALUE, CURRENCY, PIECES, WEIGHT, DESTINATION, SENDER, RECIPIENT, DESCRIPTION, PROCESS`
 
-Para la lista de inventario, basta con una columna `GUIA` (una por línea en TXT también funciona).
+**Inventory list** — single `TRACKING` column (one per line; plain TXT also works).
